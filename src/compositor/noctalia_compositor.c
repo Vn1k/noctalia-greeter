@@ -275,6 +275,7 @@ struct greeter_server {
   int child_argc;
   char** child_argv_ptr;
   char preferred_output[512];
+  bool unpinned_wallpaper;
   float manual_scale;
   int manual_mode_width;
   int manual_mode_height;
@@ -688,6 +689,7 @@ static void parse_output_refresh_rate_map(struct greeter_server* server, char* v
 
 static void read_greeter_config(struct greeter_server* server) {
   server->preferred_output[0] = '\0';
+  server->unpinned_wallpaper = false;
   server->manual_scale = 0.0f;
   server->manual_mode_width = 0;
   server->manual_mode_height = 0;
@@ -711,6 +713,7 @@ static void read_greeter_config(struct greeter_server* server) {
   if (config.preferred_output[0] != '\0') {
     snprintf(server->preferred_output, sizeof(server->preferred_output), "%s", config.preferred_output);
   }
+  server->unpinned_wallpaper = config.unpinned_wallpaper != 0;
   if (config.manual_scale >= 1.0f) {
     server->manual_scale = config.manual_scale;
   }
@@ -879,6 +882,15 @@ static struct greeter_output* output_by_identifier(struct greeter_server* server
     }
   }
   return NULL;
+}
+
+// With [output].unpinned = "wallpaper", the connected pinned output hosts the login UI and
+// every other active output hosts a wallpaper-only greeter view.
+static struct greeter_output* unpinned_wallpaper_pin(struct greeter_server* server) {
+  if (!server->unpinned_wallpaper || use_all_outputs(server)) {
+    return NULL;
+  }
+  return output_by_identifier(server, server->preferred_output);
 }
 
 static int output_refresh_rate(const struct greeter_server* server, const struct wlr_output* output) {
@@ -1060,6 +1072,12 @@ static void layout_outputs_from_config(struct greeter_server* server, bool suppr
 }
 
 static struct greeter_output* output_for_next_view(struct greeter_server* server) {
+  // The greeter client creates the login view first, so it must land on the pinned output.
+  struct greeter_output* pinned = unpinned_wallpaper_pin(server);
+  if (pinned != NULL && pinned->active && pinned->view == NULL) {
+    return pinned;
+  }
+
   struct greeter_output* outputs[16];
   const size_t count = collect_outputs(server, outputs, 16);
   for (size_t i = 0; i < count; ++i) {
@@ -1079,6 +1097,11 @@ static void focus_view(struct greeter_view* view) {
   }
 
   struct greeter_server* server = view->server;
+  const struct greeter_output* pinned = unpinned_wallpaper_pin(server);
+  if (pinned != NULL && view->output != pinned) {
+    return;
+  }
+
   struct wlr_keyboard* keyboard = wlr_seat_get_keyboard(server->seat);
   wlr_xdg_toplevel_set_activated(view->toplevel, true);
   if (keyboard != NULL) {
@@ -1735,19 +1758,21 @@ static void choose_outputs(struct greeter_server* server) {
       use_all = true;
     }
   }
+  // Keep unpinned outputs enabled for their wallpaper-only views.
+  const bool show_all = use_all || (pinned != NULL && server->unpinned_wallpaper);
 
   // Release inherited scanouts before enabling selected outputs so they can
   // borrow any freed CRTCs.
   struct greeter_output* output;
   wl_list_for_each(output, &server->outputs, link) {
-    const bool want = use_all || pinned == NULL || output == pinned;
+    const bool want = show_all || pinned == NULL || output == pinned;
     if (!want && output->wlr_output->enabled) {
       disable_output(output);
     }
   }
 
   wl_list_for_each(output, &server->outputs, link) {
-    const bool want = use_all || pinned == NULL || output == pinned;
+    const bool want = show_all || pinned == NULL || output == pinned;
     // Clear inherited scanouts, but leave already-disabled connectors off.
     // Enabling one just to clear it can make a monitor report a fresh hotplug,
     // repeatedly cycling the connector between enabled and disabled.
@@ -1756,8 +1781,10 @@ static void choose_outputs(struct greeter_server* server) {
     }
   }
 
-  if (use_all) {
-    const bool suppress_internal = any_lid_closed(server) && any_external_output_connected(server);
+  if (show_all) {
+    const bool pinned_internal = pinned != NULL && greeter_output_name_is_internal(pinned->wlr_output->name);
+    const bool suppress_internal =
+        !pinned_internal && any_lid_closed(server) && any_external_output_connected(server);
     layout_all_outputs(server, suppress_internal);
     if (suppress_internal && any_external_output_active(server)) {
       wl_list_for_each(output, &server->outputs, link) {
@@ -1768,6 +1795,10 @@ static void choose_outputs(struct greeter_server* server) {
     } else if (suppress_internal) {
       wlr_log(WLR_ERROR, "lid closed but no external output could be enabled; keeping internal output available");
       layout_all_outputs(server, false);
+    }
+    if (pinned != NULL && pinned->active) {
+      restore_lid_suppressed_output(pinned);
+      wlr_log(WLR_INFO, "greeter pinned output: %s (unpinned outputs show wallpaper)", pinned->wlr_output->name);
     }
   } else if (pinned != NULL) {
     if ((!pinned->active && enable_layout_output(pinned, 0, 0)) || pinned->active) {

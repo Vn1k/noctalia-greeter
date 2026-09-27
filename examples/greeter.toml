@@ -76,6 +76,8 @@ fill_mode = "crop"
 # List both with: noctalia-greeter outputs --details
 name = "DP-2"
 # name = "Acer Technologies XV242Y TL1EE0018521"
+# Other monitors while `name` is pinned: "off" (default) or "wallpaper" (wallpaper only, no login UI).
+# unpinned = "wallpaper"
 # Multi-monitor positions (logical pixels). Connector names or stable identifiers; use semicolons when identifiers
 # contain spaces. Outputs omitted from the mapping are appended to the right with automatic scale.
 # Overrides Sync layout in sync.toml when set.

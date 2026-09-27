@@ -101,6 +101,7 @@ bool Greeter::initialize(WaylandClient& client) {
     syncOutputWindows();
   });
 
+  m_unpinnedWallpaper = prefs.unpinnedWallpaper;
   applyConfiguredOutput(client, prefs.output);
 
   for (int attempt = 0; attempt < 5; ++attempt) {
@@ -251,7 +252,7 @@ void Greeter::syncOutputWindows() {
     std::optional<WaylandOutputLayout> layout;
   };
   std::vector<TargetOutput> targets;
-  for (const WaylandOutputInfo* output : m_client->greeterTargetOutputs()) {
+  for (const WaylandOutputInfo* output : m_client->greeterTargetOutputs(m_unpinnedWallpaper)) {
     if (output != nullptr) {
       targets.push_back(
           TargetOutput{
@@ -369,9 +370,12 @@ void Greeter::syncOutputWindows() {
     }
   }
 
+  // The pinned output is always the first target, and the compositor gives it the first toplevel.
+  const bool loginOnFirstOnly = m_unpinnedWallpaper && m_client->hasResolvedPreferredOutput();
   for (std::size_t i = 0; i < targets.size(); ++i) {
     m_views[i].window->bindOutput(targets[i].output);
     m_views[i].surface->setBoundOutputName(targets[i].name);
+    m_views[i].surface->setWallpaperOnly(loginOnFirstOnly && i > 0);
     m_views[i].surface->setWallpaperSpanParams(greeter::computeWallpaperSpanParams(spanOutputs, i));
     m_views[i].window->matchOutputLogicalSize();
     if (m_sceneReady) {

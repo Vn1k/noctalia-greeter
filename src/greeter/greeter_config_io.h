@@ -8,6 +8,7 @@ extern "C" {
 
 struct greeter_compositor_config {
   char preferred_output[512];
+  int unpinned_wallpaper;
   float manual_scale;
   int manual_mode_width;
   int manual_mode_height;

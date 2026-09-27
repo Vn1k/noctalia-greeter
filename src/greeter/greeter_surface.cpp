@@ -979,6 +979,11 @@ void GreeterSurface::prepareFrame(std::uint32_t width, std::uint32_t height, boo
     syncWallpaperTexture();
     m_inLayout = true;
     layoutScene(width, height);
+    if (m_wallpaperOnly) {
+      for (const auto& child : m_root.children()) {
+        child->setVisible(child.get() == m_wallpaper || child.get() == m_letterbox);
+      }
+    }
     m_inLayout = false;
   }
 }
@@ -1841,6 +1846,16 @@ std::optional<std::size_t> GreeterSurface::findSchemeIndex(const std::string_vie
     }
   }
   return std::nullopt;
+}
+
+void GreeterSurface::setWallpaperOnly(bool wallpaperOnly) {
+  if (m_wallpaperOnly == wallpaperOnly) {
+    return;
+  }
+  m_wallpaperOnly = wallpaperOnly;
+  if (m_window != nullptr) {
+    m_window->requestLayout();
+  }
 }
 
 void GreeterSurface::setBoundOutputName(std::string outputName) {

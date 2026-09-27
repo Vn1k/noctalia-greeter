@@ -45,6 +45,8 @@ public:
 
   void setWindow(GreeterWindow* window);
   void setBoundOutputName(std::string outputName);
+  // Renders only the wallpaper; used for outputs other than a pinned login output.
+  void setWallpaperOnly(bool wallpaperOnly);
   void setWallpaperSpanParams(const WallpaperSpanParams& params);
   void setGreetdClient(GreetdClient* client);
   void setUsername(const std::string& username);
@@ -181,6 +183,7 @@ private:
 
   WallpaperNode* m_wallpaper = nullptr;
   RectNode* m_letterbox = nullptr;
+  bool m_wallpaperOnly = false;
   Node* m_backdrop = nullptr;
   float m_viewportX = 0.0f;
   float m_viewportY = 0.0f;

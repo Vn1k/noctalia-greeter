@@ -53,6 +53,8 @@ namespace greeter::config {
     GreeterTomlAppearance appearance;
 
     std::optional<std::string> outputName;
+    // Content for connected outputs other than a pinned outputName: "off" or "wallpaper".
+    std::optional<std::string> outputUnpinned;
     std::optional<std::string> outputLayout;
     std::optional<float> outputScale;
     std::optional<int> outputModeWidth;

@@ -63,6 +63,7 @@ Set these keys in `greeter.toml`. A command-line `--session` or `--user` value t
 | `[appearance.wallpaper]` | Default wallpaper `path`, `fill_mode`, and `fill_color`; `fill_color` also works without an image, and `fill_mode` accepts `center`, `crop`, `fit`, `stretch`, `repeat`, or `span` |
 | `[appearance.wallpapers.<connector>]` | Per-output wallpaper override using the same fill modes |
 | `[output].name` | Connector or stable EDID identifier on which to pin the greeter |
+| `[output].unpinned` | Other outputs while `name` is pinned: `off` (default) or `wallpaper` |
 | `[output].layout` | Multi-monitor positions by connector or stable identifier; overrides synced layout |
 | `[output].width` / `.height` | Preferred DRM mode size |
 | `[output].refresh_rate` | Preferred DRM mode refresh rate in hertz, globally or per output |

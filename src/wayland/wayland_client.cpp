@@ -521,12 +521,21 @@ std::vector<const WaylandOutputInfo*> WaylandClient::readyOutputsSorted() const 
   return ready;
 }
 
-std::vector<const WaylandOutputInfo*> WaylandClient::greeterTargetOutputs() const noexcept {
+std::vector<const WaylandOutputInfo*> WaylandClient::greeterTargetOutputs(bool includeUnpinned) const noexcept {
   if (hasResolvedPreferredOutput()) {
-    if (const WaylandOutputInfo* out = preferredOutput()) {
-      return {out};
+    const WaylandOutputInfo* out = preferredOutput();
+    if (out == nullptr) {
+      return {};
     }
-    return {};
+    std::vector<const WaylandOutputInfo*> targets{out};
+    if (includeUnpinned) {
+      for (const WaylandOutputInfo* other : readyOutputsSorted()) {
+        if (other != out) {
+          targets.push_back(other);
+        }
+      }
+    }
+    return targets;
   }
   return readyOutputsSorted();
 }

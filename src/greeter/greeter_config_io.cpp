@@ -77,6 +77,7 @@ namespace {
 
   [[nodiscard]] bool isKnownOutputKey(std::string_view key) {
     return key == "name"
+        || key == "unpinned"
         || key == "layout"
         || key == "scale"
         || key == "scales"
@@ -283,6 +284,12 @@ namespace {
           }
           if (entryView == "name") {
             config.outputName = stringValue(entryNode);
+          } else if (entryView == "unpinned") {
+            if (const auto unpinned = stringValue(entryNode); unpinned == "off" || unpinned == "wallpaper") {
+              config.outputUnpinned = *unpinned;
+            } else {
+              kLog.warn("{}: invalid output.unpinned value (expected \"off\" or \"wallpaper\")", path.string());
+            }
           } else if (entryView == "layout") {
             config.outputLayout = stringValue(entryNode);
           } else if (entryView == "scale") {
@@ -516,6 +523,12 @@ namespace {
     toml::table output;
     insertString(
         output, "name", config.outputName, [](toml::table& table, std::string_view key, const std::string& value) {
+          table.insert_or_assign(std::string(key), value);
+        }
+    );
+    insertString(
+        output, "unpinned", config.outputUnpinned,
+        [](toml::table& table, std::string_view key, const std::string& value) {
           table.insert_or_assign(std::string(key), value);
         }
     );
@@ -1090,6 +1103,7 @@ extern "C" void greeter_compositor_config_load(const char* state_dir, struct gre
   const greeter::config::GreeterSyncFile sync = greeter::config::loadSync(syncPath);
 
   copyString(out->preferred_output, sizeof(out->preferred_output), config.outputName);
+  out->unpinned_wallpaper = config.outputUnpinned == "wallpaper" ? 1 : 0;
   copyString(out->cursor_theme, sizeof(out->cursor_theme), config.cursorTheme);
   copyString(out->cursor_path, sizeof(out->cursor_path), config.cursorPath);
   copyString(out->keyboard_layout, sizeof(out->keyboard_layout), config.keyboardLayout);

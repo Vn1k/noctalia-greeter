@@ -94,7 +94,8 @@ public:
   [[nodiscard]] bool hasPreferredOutputName() const noexcept;
   [[nodiscard]] bool hasReadyOutputs() const noexcept;
   [[nodiscard]] std::vector<const WaylandOutputInfo*> readyOutputsSorted() const noexcept;
-  [[nodiscard]] std::vector<const WaylandOutputInfo*> greeterTargetOutputs() const noexcept;
+  // With a resolved preferred output, it comes first; includeUnpinned appends the other ready outputs.
+  [[nodiscard]] std::vector<const WaylandOutputInfo*> greeterTargetOutputs(bool includeUnpinned) const noexcept;
   [[nodiscard]] bool hasResolvedPreferredOutput() const noexcept;
   void forgetPreferredOutput() noexcept;
   [[nodiscard]] std::optional<WaylandOutputLayout> preferredOutputLayout() const noexcept;

@@ -68,6 +68,7 @@ private:
   bool m_exitRequested = false;
   bool m_sceneReady = false;
   bool m_initializing = false;
+  bool m_unpinnedWallpaper = false;
   bool m_pendingOutputSync = false;
   bool m_syncingOutputWindows = false;
   bool m_greetdUnavailable = false;

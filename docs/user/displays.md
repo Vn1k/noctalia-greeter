@@ -66,6 +66,21 @@ off without a temporary modeset. If `name` is empty, missing, invalid, or
 refers to a disconnected monitor, the greeter falls back to all connected
 outputs.
 
+To keep the other monitors on and show only the wallpaper there, set
+`unpinned` to `wallpaper`:
+
+```toml
+[output]
+name = "HDMI-A-1"
+unpinned = "wallpaper"
+```
+
+The login interface, keyboard focus, and pointer stay on the pinned output.
+The other outputs use their `[appearance.wallpapers.<connector>]` entry or the
+default wallpaper, and follow `layout`, `scales`, and `transforms`. The default
+value `off` disables them as described above. `unpinned` has no effect without
+a connected `name`.
+
 ## Arrange multiple monitors
 
 Without an explicit layout, outputs are placed from left to right in connector
