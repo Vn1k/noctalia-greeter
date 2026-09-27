@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <filesystem>
 #include <linux/input-event-codes.h>
 #include <nlohmann/json.hpp>
@@ -507,6 +508,17 @@ void GreeterSurface::initialize(RenderContext* context) {
   m_statusLabel = status.get();
   m_statusLabel->setZIndex(6);
   m_root.addChild(std::move(status));
+
+  auto clock = std::make_unique<Label>();
+  clock->setBold(true);
+  clock->setVisible(false);
+  m_clockLabel = clock.get();
+  m_root.addChild(std::move(clock));
+
+  auto date = std::make_unique<Label>();
+  date->setVisible(false);
+  m_dateLabel = date.get();
+  m_root.addChild(std::move(date));
 
   auto configErrorBanner = std::make_unique<RectNode>();
   configErrorBanner->setHitTestVisible(false);
@@ -984,6 +996,7 @@ void GreeterSurface::prepareFrame(std::uint32_t width, std::uint32_t height, boo
         child->setVisible(child.get() == m_wallpaper || child.get() == m_letterbox);
       }
     }
+    layoutClock();
     m_inLayout = false;
   }
 }
@@ -1846,6 +1859,59 @@ std::optional<std::size_t> GreeterSurface::findSchemeIndex(const std::string_vie
     }
   }
   return std::nullopt;
+}
+
+void GreeterSurface::setShowClock(bool showClock) {
+  if (m_showClock == showClock) {
+    return;
+  }
+  m_showClock = showClock;
+  refreshClock();
+}
+
+void GreeterSurface::refreshClock() {
+  if (!m_showClock) {
+    return;
+  }
+  const std::time_t now = std::time(nullptr);
+  std::tm local{};
+  localtime_r(&now, &local);
+  char buffer[128];
+  if (std::strftime(buffer, sizeof(buffer), "%H:%M", &local) > 0) {
+    m_clockLabel->setText(buffer);
+  }
+  if (std::strftime(buffer, sizeof(buffer), "%A, %d %B %Y", &local) > 0) {
+    m_dateLabel->setText(buffer);
+  }
+  if (m_window != nullptr) {
+    m_window->requestLayout();
+  }
+}
+
+void GreeterSurface::layoutClock() {
+  const bool visible = m_wallpaperOnly && m_showClock;
+  m_clockLabel->setVisible(visible);
+  m_dateLabel->setVisible(visible);
+  if (!visible || m_renderContext == nullptr) {
+    return;
+  }
+
+  const float ox = m_outputViewportActive ? m_viewportX : 0.0f;
+  const float oy = m_outputViewportActive ? m_viewportY : 0.0f;
+  const float sw = m_outputViewportActive ? m_viewportWidth : m_root.width();
+  const float sh = m_outputViewportActive ? m_viewportHeight : m_root.height();
+
+  m_clockLabel->setFontSize(Style::scaled(96.0f));
+  m_clockLabel->setColor(colorForRole(ColorRole::OnSurface));
+  m_dateLabel->setFontSize(Style::fontSizeHeading());
+  m_dateLabel->setColor(colorForRole(ColorRole::OnSurface, 0.88f));
+  m_clockLabel->measure(*m_renderContext);
+  m_dateLabel->measure(*m_renderContext);
+
+  const float gap = Style::spaceSm();
+  const float top = oy + std::round((sh - m_clockLabel->height() - gap - m_dateLabel->height()) * 0.5f);
+  m_clockLabel->setPosition(ox + std::round((sw - m_clockLabel->width()) * 0.5f), top);
+  m_dateLabel->setPosition(ox + std::round((sw - m_dateLabel->width()) * 0.5f), top + m_clockLabel->height() + gap);
 }
 
 void GreeterSurface::setWallpaperOnly(bool wallpaperOnly) {

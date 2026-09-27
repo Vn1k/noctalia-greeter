@@ -50,7 +50,8 @@ namespace {
         || key == "cursor"
         || key == "keyboard"
         || key == "auth"
-        || key == "idle";
+        || key == "idle"
+        || key == "clock";
   }
 
   [[nodiscard]] bool isKnownSessionKey(std::string_view key) {
@@ -88,6 +89,8 @@ namespace {
   }
 
   [[nodiscard]] bool isKnownIdleKey(std::string_view key) { return key == "timeout"; }
+
+  [[nodiscard]] bool isKnownClockKey(std::string_view key) { return key == "outputs"; }
 
   [[nodiscard]] bool isKnownCursorKey(std::string_view key) { return key == "theme" || key == "size" || key == "path"; }
 
@@ -322,6 +325,24 @@ namespace {
             config.outputTransforms = stringValue(entryNode);
           } else if (entryView == "scales") {
             config.outputScales = stringValue(entryNode);
+          }
+        } else if (keyView == "clock") {
+          if (!isKnownClockKey(entryView)) {
+            warnUnknownSectionKey(path, keyView, entryView);
+            continue;
+          }
+          const auto* outputs = entryNode.as_array();
+          if (outputs == nullptr) {
+            kLog.warn("{}: clock.outputs must be an array of connector names", path.string());
+            continue;
+          }
+          config.clockOutputs.clear();
+          for (const auto& outputNode : *outputs) {
+            if (const auto name = stringValue(outputNode)) {
+              config.clockOutputs.push_back(*name);
+            } else {
+              kLog.warn("{}: clock.outputs entries must be connector names", path.string());
+            }
           }
         } else if (keyView == "idle") {
           if (!isKnownIdleKey(entryView)) {
@@ -569,6 +590,16 @@ namespace {
     );
     if (!output.empty()) {
       root.insert("output", std::move(output));
+    }
+
+    if (!config.clockOutputs.empty()) {
+      toml::array outputs;
+      for (const std::string& name : config.clockOutputs) {
+        outputs.push_back(name);
+      }
+      toml::table clock;
+      clock.insert_or_assign("outputs", std::move(outputs));
+      root.insert("clock", std::move(clock));
     }
 
     if (config.idleTimeoutSec.has_value()) {

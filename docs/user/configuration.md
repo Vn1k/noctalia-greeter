@@ -64,6 +64,7 @@ Set these keys in `greeter.toml`. A command-line `--session` or `--user` value t
 | `[appearance.wallpapers.<connector>]` | Per-output wallpaper override using the same fill modes |
 | `[output].name` | Connector or stable EDID identifier on which to pin the greeter |
 | `[output].unpinned` | Other outputs while `name` is pinned: `off` (default) or `wallpaper` |
+| `[clock].outputs` | Connectors of wallpaper-only outputs that show a clock and date |
 | `[output].layout` | Multi-monitor positions by connector or stable identifier; overrides synced layout |
 | `[output].width` / `.height` | Preferred DRM mode size |
 | `[output].refresh_rate` | Preferred DRM mode refresh rate in hertz, globally or per output |

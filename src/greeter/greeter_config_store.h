@@ -65,6 +65,9 @@ namespace greeter::config {
     // Per-connector scales (NAME:1.25; ...). Distinct from global outputScale.
     std::optional<std::string> outputScales;
 
+    // Connectors of wallpaper-only outputs that show a clock and date.
+    std::vector<std::string> clockOutputs;
+
     std::optional<int> idleTimeoutSec;
 
     std::optional<std::string> cursorTheme;

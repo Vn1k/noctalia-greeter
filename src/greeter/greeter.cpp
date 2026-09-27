@@ -102,6 +102,7 @@ bool Greeter::initialize(WaylandClient& client) {
   });
 
   m_unpinnedWallpaper = prefs.unpinnedWallpaper;
+  m_clockOutputs = prefs.clockOutputs;
   applyConfiguredOutput(client, prefs.output);
 
   for (int attempt = 0; attempt < 5; ++attempt) {
@@ -163,7 +164,16 @@ int Greeter::run(WaylandClient& client, const std::atomic<bool>& shutdownRequest
 
     const int repeatMs = client.repeatPollTimeoutMs();
     const int requestMs = m_greetdClient.requestPollTimeoutMs();
-    const int timeoutMs = repeatMs < 0 ? requestMs : requestMs < 0 ? repeatMs : std::min(repeatMs, requestMs);
+    int timeoutMs = repeatMs < 0 ? requestMs : requestMs < 0 ? repeatMs : std::min(repeatMs, requestMs);
+    // Wake at the next minute boundary so wallpaper-only clocks stay current.
+    const auto clockMinute = std::chrono::floor<std::chrono::minutes>(std::chrono::system_clock::now());
+    if (m_clockShown) {
+      const auto untilNextMinute = std::chrono::ceil<std::chrono::milliseconds>(
+          clockMinute + std::chrono::minutes(1) - std::chrono::system_clock::now()
+      );
+      const int clockMs = static_cast<int>(untilNextMinute.count());
+      timeoutMs = timeoutMs < 0 ? clockMs : std::min(timeoutMs, clockMs);
+    }
 
     while (wl_display_prepare_read(display) != 0) {
       if (wl_display_dispatch_pending(display) < 0) {
@@ -224,6 +234,12 @@ int Greeter::run(WaylandClient& client, const std::atomic<bool>& shutdownRequest
     // disarmed the watchdog before this check.
     if (const auto timeout = m_greetdClient.timedOutRequest()) {
       onGreetdTimeout(*timeout);
+    }
+
+    if (m_clockShown && std::chrono::floor<std::chrono::minutes>(std::chrono::system_clock::now()) != clockMinute) {
+      for (View& view : m_views) {
+        view.surface->refreshClock();
+      }
     }
 
     if (wl_display_dispatch_pending(display) < 0) {
@@ -372,10 +388,15 @@ void Greeter::syncOutputWindows() {
 
   // The pinned output is always the first target, and the compositor gives it the first toplevel.
   const bool loginOnFirstOnly = m_unpinnedWallpaper && m_client->hasResolvedPreferredOutput();
+  m_clockShown = false;
   for (std::size_t i = 0; i < targets.size(); ++i) {
+    const bool wallpaperOnly = loginOnFirstOnly && i > 0;
+    const bool showClock = wallpaperOnly && std::ranges::find(m_clockOutputs, targets[i].name) != m_clockOutputs.end();
+    m_clockShown = m_clockShown || showClock;
     m_views[i].window->bindOutput(targets[i].output);
     m_views[i].surface->setBoundOutputName(targets[i].name);
-    m_views[i].surface->setWallpaperOnly(loginOnFirstOnly && i > 0);
+    m_views[i].surface->setWallpaperOnly(wallpaperOnly);
+    m_views[i].surface->setShowClock(showClock);
     m_views[i].surface->setWallpaperSpanParams(greeter::computeWallpaperSpanParams(spanOutputs, i));
     m_views[i].window->matchOutputLogicalSize();
     if (m_sceneReady) {

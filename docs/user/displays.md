@@ -81,6 +81,17 @@ default wallpaper, and follow `layout`, `scales`, and `transforms`. The default
 value `off` disables them as described above. `unpinned` has no effect without
 a connected `name`.
 
+To show a clock and date on some of those wallpaper-only outputs, list their
+connectors:
+
+```toml
+[clock]
+outputs = ["DP-2"]
+```
+
+The time uses `HH:MM` and the date follows the system locale. Connectors that
+are not wallpaper-only, including the pinned output, are ignored.
+
 ## Arrange multiple monitors
 
 Without an explicit layout, outputs are placed from left to right in connector

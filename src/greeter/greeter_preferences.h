@@ -29,6 +29,8 @@ namespace greeter {
     std::optional<std::string> output;
     // Show only the wallpaper on outputs other than the pinned output.
     bool unpinnedWallpaper = false;
+    // Connectors of wallpaper-only outputs that show a clock and date.
+    std::vector<std::string> clockOutputs;
     // Manual UI scale; unset or invalid → auto from display geometry.
     std::optional<float> scale;
     PasswordMaskStyle passwordMaskStyle = PasswordMaskStyle::Default;

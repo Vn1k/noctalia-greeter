@@ -411,6 +411,7 @@ namespace greeter {
     prefs.scheme = file.appearanceScheme.has_value() ? file.appearanceScheme : sync.appearanceScheme;
     prefs.output = file.outputName;
     prefs.unpinnedWallpaper = file.outputUnpinned == "wallpaper";
+    prefs.clockOutputs = file.clockOutputs;
     prefs.scale = file.outputScale;
     if (file.appearancePasswordStyle.has_value()) {
       if (*file.appearancePasswordStyle == "random") {

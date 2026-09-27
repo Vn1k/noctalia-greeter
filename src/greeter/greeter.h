@@ -69,6 +69,8 @@ private:
   bool m_sceneReady = false;
   bool m_initializing = false;
   bool m_unpinnedWallpaper = false;
+  std::vector<std::string> m_clockOutputs;
+  bool m_clockShown = false;
   bool m_pendingOutputSync = false;
   bool m_syncingOutputWindows = false;
   bool m_greetdUnavailable = false;

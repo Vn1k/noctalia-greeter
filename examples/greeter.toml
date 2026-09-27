@@ -99,6 +99,10 @@ scales = "DP-1:1; DP-2:1"
 # Manual UI scale for all outputs; omit or invalid -> per-output scales, else auto from display geometry.
 scale = 1.5
 
+# Clock and date on wallpaper-only outputs (requires `unpinned = "wallpaper"`), by connector.
+# [clock]
+# outputs = ["DP-1"]
+
 [idle]
 # Seconds with no input before blanking outputs; 0 disables (range 0-86400).
 timeout = 300

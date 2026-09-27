@@ -47,6 +47,9 @@ public:
   void setBoundOutputName(std::string outputName);
   // Renders only the wallpaper; used for outputs other than a pinned login output.
   void setWallpaperOnly(bool wallpaperOnly);
+  // Clock and date over the wallpaper; only drawn while wallpaper-only.
+  void setShowClock(bool showClock);
+  void refreshClock();
   void setWallpaperSpanParams(const WallpaperSpanParams& params);
   void setGreetdClient(GreetdClient* client);
   void setUsername(const std::string& username);
@@ -94,6 +97,7 @@ private:
   [[nodiscard]] bool pointerInViewport(float x, float y) const;
   void syncScaledTypography();
   void layoutScene(std::uint32_t width, std::uint32_t height);
+  void layoutClock();
   void tryAuthenticate();
   void handleGreetdResponse(const GreetdResponse& response);
   void handleAuthMessage(const GreetdAuthMessage& message);
@@ -184,6 +188,9 @@ private:
   WallpaperNode* m_wallpaper = nullptr;
   RectNode* m_letterbox = nullptr;
   bool m_wallpaperOnly = false;
+  bool m_showClock = false;
+  Label* m_clockLabel = nullptr;
+  Label* m_dateLabel = nullptr;
   Node* m_backdrop = nullptr;
   float m_viewportX = 0.0f;
   float m_viewportY = 0.0f;
